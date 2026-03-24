@@ -239,56 +239,64 @@ if st.session_state.clicked:
 st.divider()
 
 # --- シエル対話エリア (下部配置) ---
-st.header("AI相談:シエル")
+st.header("AI分析ボット：シエル")
 
 if st.session_state.clicked:
-    # 履歴削除ボタンを右上に配置するためのカラム
-    btn_col1, btn_col2 = st.columns([0.7, 0.2])
+    # 履歴削除ボタン
+    btn_col1, btn_col2 = st.columns([0.8, 0.2])
     with btn_col2:
         if st.button("💬 履歴をリセット"):
-            # セッション内の全メッセージを消去
             st.session_state.messages = []
-            
-            # シエルの「解析済みフラグ」も消去（これが残っていると再起動しない）
             if "last_analyzed_data" in st.session_state:
                 del st.session_state.last_analyzed_data
-            
-            # 再描画
+            # 物理ファイルを使わない設定にしている場合は、ここだけでOK
             st.rerun()
 
     activate_ciel = st.checkbox("シエルを起動して対話を開始する", value=False)
     
     if activate_ciel:
-        st.info("シエルによる分析モードを展開します")
+        st.info("Mathematical Reasoning Mode: ON")
         
-        # チャット履歴表示
+        # --- ここからが「連動型」のロジック ---
+        
+        # 1. データ更新チェック
+        is_data_updated = (
+            "last_analyzed_data" not in st.session_state or 
+            st.session_state.last_analyzed_data != st.session_state.current_analysis
+        )
+
+        # 2. 過去の履歴を表示
         for msg in st.session_state.messages:
             with st.chat_message(msg["role"]): 
                 st.markdown(msg["parts"][0]["text"])
 
-        # 自動コメント
-        if "last_analyzed_data" not in st.session_state and "current_analysis" in st.session_state:
+        # 3. データが新しい場合のみ、シエルに再考させる
+        if is_data_updated and "current_analysis" in st.session_state:
             st.session_state.last_analyzed_data = st.session_state.current_analysis
-            initial_prompt = f"現在の解析結果（{st.session_state.current_analysis}）を元に、数理的な総評を述べてください。"
+            initial_prompt = f"入力パラメータが更新されました。最新の解析結果（{st.session_state.current_analysis}）に基づき、数理的な再評価を述べてください。"
+            
             try:
-                chat = client.chats.create(model='models/gemini-flash-latest', config={'system_instruction': SYSTEM_INSTRUCTION})
+                # model名を 'gemini-1.5-flash' に統一
+                chat = client.chats.create(model='gemini-1.5-flash', config={'system_instruction': SYSTEM_INSTRUCTION})
                 response = chat.send_message(initial_prompt)
-                with st.chat_message("model"): st.markdown(response.text)
+                
+                with st.chat_message("model"): 
+                    st.markdown(response.text)
+                
+                # 履歴に追加
                 st.session_state.messages.append({"role": "model", "parts": [{"text": response.text}]})
-                save_history(st.session_state.messages)
             except Exception as e:
-                st.warning(f"接続エラー: {e}")
+                st.warning(f"シエルの再考に失敗しました: {e}")
 
-        # 入力
+        # 4. ユーザーからの自由入力
         if prompt := st.chat_input("この解析結果について質問する..."):
             st.session_state.messages.append({"role": "user", "parts": [{"text": prompt}]})
             with st.chat_message("user"): st.markdown(prompt)
             try:
-                chat = client.chats.create(model='models/gemini-flash-latest', config={'system_instruction': SYSTEM_INSTRUCTION}, history=st.session_state.messages[:-1])
+                chat = client.chats.create(model='gemini-1.5-flash', config={'system_instruction': SYSTEM_INSTRUCTION}, history=st.session_state.messages[:-1])
                 response = chat.send_message(prompt + f"\nContext: {st.session_state.current_analysis}")
                 with st.chat_message("model"): st.markdown(response.text)
                 st.session_state.messages.append({"role": "model", "parts": [{"text": response.text}]})
-                save_history(st.session_state.messages)
             except Exception as e:
                 st.error(f"シエル接続エラー: {e}")
     else:
