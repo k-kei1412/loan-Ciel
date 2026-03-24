@@ -243,7 +243,7 @@ st.header("AI分析ボット：シエル")
 
 if st.session_state.clicked:
     # 履歴削除ボタン
-    btn_col1, btn_col2 = st.columns([0.7, 0.3])
+    btn_col1, btn_col2 = st.columns([0.7, 0.2])
     with btn_col2:
         if st.button("💬 履歴をリセット"):
             st.session_state.messages = []
@@ -255,7 +255,7 @@ if st.session_state.clicked:
     activate_ciel = st.checkbox("シエルを起動して対話を開始する", value=False)
     
     if activate_ciel:
-        st.info("Mathematical Reasoning Mode: ON")
+        st.info("シエルによる分析を開始します。")
         
         # --- ここからが「連動型」のロジック ---
         
