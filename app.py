@@ -243,7 +243,7 @@ st.header("AI相談:シエル")
 
 if st.session_state.clicked:
     # 履歴削除ボタンを右上に配置するためのカラム
-    btn_col1, btn_col2 = st.columns([0.8, 0.2])
+    btn_col1, btn_col2 = st.columns([1.0, 0.2])
     with btn_col2:
         if st.button("💬 履歴をリセット"):
             # セッション内の全メッセージを消去
