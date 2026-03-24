@@ -305,7 +305,7 @@ with col_ciel:
                 
                 try:
                     # モデルを1.5-flashにすることで、2.0の厳しい制限(429)を回避しやすくしています
-                    chat = client.chats.create(model='gemini-1.5-flash', config={'system_instruction': SYSTEM_INSTRUCTION})
+                    chat = client.chats.create(model='models/gemini-flash-latest', config={'system_instruction': SYSTEM_INSTRUCTION})
                     response = chat.send_message(initial_prompt)
                     with st.chat_message("model"): 
                         st.markdown(response.text)
@@ -322,7 +322,7 @@ with col_ciel:
 
                 try:
                     full_prompt = prompt + (f"\n補足データ: {st.session_state.current_analysis}" if "current_analysis" in st.session_state else "")
-                    chat = client.chats.create(model='gemini-1.5-flash', config={'system_instruction': SYSTEM_INSTRUCTION}, history=st.session_state.messages[:-1])
+                    chat = client.chats.create(model='models/gemini-flash-latest', config={'system_instruction': SYSTEM_INSTRUCTION}, history=st.session_state.messages[:-1])
                     response = chat.send_message(full_prompt)
                     with st.chat_message("model"): 
                         st.markdown(response.text)
