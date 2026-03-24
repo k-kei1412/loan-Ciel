@@ -41,8 +41,13 @@ def save_history(messages):
     with open(HISTORY_FILE, "w", encoding="utf-8") as f:
         json.dump(messages, f, ensure_ascii=False, indent=2)
 
+# 冒頭の初期化部分をこのように修正
 if "messages" not in st.session_state:
     st.session_state.messages = load_history()
+
+# 追加：もしmessagesがNoneだった場合の保険
+if st.session_state.messages is None:
+    st.session_state.messages = []
 
 # APIクライアント初期化
 api_key = st.secrets.get(ST_KEY)
@@ -234,18 +239,20 @@ if st.session_state.clicked:
     btn_col1, btn_col2 = st.columns([0.8, 0.2])
     with btn_col2:
         if st.button("💬 履歴をリセット"):
-            # 1. メモリ上の履歴を空にする
-            st.session_state.messages = []
-            
-            # 2. 保存ファイルを空のリストで上書きする（ここが重要！）
+            # 1. 保存ファイルの中身を物理的に空にする
             with open(HISTORY_FILE, "w", encoding="utf-8") as f:
                 json.dump([], f, ensure_ascii=False, indent=2)
             
-            # 3. 自動思考フラグもリセット
+            # 2. セッション内のメッセージを即座に空のリストに差し替える
+            st.session_state.messages = []
+            
+            # 3. シエルの初期フラグを削除
             if "last_analyzed_data" in st.session_state:
                 del st.session_state.last_analyzed_data
             
-            # 4. 画面を強制リロードして反映
+            # 4. モデルの履歴キャッシュも念のためクリアするならここ（任意）
+            
+            # 5. 強制的に再描画
             st.rerun()
 
     activate_ciel = st.checkbox("シエルを起動して対話を開始する", value=False)
