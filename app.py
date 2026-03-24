@@ -282,37 +282,58 @@ with col_main:
 
 # --- シエル対話エリア (右側) ---
 with col_ciel:
-    st.header("🤖 シエル・エージェント")
-    st.caption("Mathematical & Data Science Reasoning")
+    st.header("🤖 エージェント")
     
-    # 履歴表示
-    for msg in st.session_state.messages:
-        with st.chat_message(msg["role"]): st.markdown(msg["parts"][0]["text"])
-
-    # 解析直後の自動コメント（最初の1回だけ）
-    if st.session_state.clicked and "last_analyzed_data" not in st.session_state:
-        st.session_state.last_analyzed_data = st.session_state.current_analysis
-        initial_prompt = f"現在の解析結果（{st.session_state.current_analysis}）を元に、データサイエンティストとして数理的な総評を述べてください。"
+    # 審査ボタンが押されている場合のみ、起動スイッチを表示
+    if st.session_state.clicked:
+        # シエルを起動するかどうかの切り替えトグル
+        activate_ciel = st.checkbox("シエル（数理エージェント）を起動する", value=False)
         
-        try:
-            chat = client.chats.create(model='models/gemini-2.0-flash', config={'system_instruction': SYSTEM_INSTRUCTION})
-            response = chat.send_message(initial_prompt)
-            with st.chat_message("model"): st.markdown(response.text)
-            st.session_state.messages.append({"role": "model", "parts": [{"text": response.text}]})
-            save_history(st.session_state.messages)
-        except: st.warning("シエルの自動思考に失敗しました（API制限等）")
+        if activate_ciel:
+            st.caption("Mathematical & Data Science Reasoning Mode")
+            st.divider()
+            
+            # 履歴表示
+            for msg in st.session_state.messages:
+                with st.chat_message(msg["role"]): 
+                    st.markdown(msg["parts"][0]["text"])
 
-    # ユーザー入力
-    if prompt := st.chat_input("数理ロジックについて相談する..."):
-        st.session_state.messages.append({"role": "user", "parts": [{"text": prompt}]})
-        with st.chat_message("user"): st.markdown(prompt)
+            # 解析直後の自動コメント（表示された瞬間に1回だけ実行）
+            if "last_analyzed_data" not in st.session_state and "current_analysis" in st.session_state:
+                st.session_state.last_analyzed_data = st.session_state.current_analysis
+                initial_prompt = f"現在の解析結果（{st.session_state.current_analysis}）を元に、データサイエンティストとして数理的な総評を述べてください。"
+                
+                try:
+                    # モデルを1.5-flashにすることで、2.0の厳しい制限(429)を回避しやすくしています
+                    chat = client.chats.create(model='models/gemini-1.5-flash', config={'system_instruction': SYSTEM_INSTRUCTION})
+                    response = chat.send_message(initial_prompt)
+                    with st.chat_message("model"): 
+                        st.markdown(response.text)
+                    st.session_state.messages.append({"role": "model", "parts": [{"text": response.text}]})
+                    save_history(st.session_state.messages)
+                except Exception as e:
+                    st.warning(f"シエルの自動思考に失敗しました: {e}")
 
-        try:
-            full_prompt = prompt + (f"\n補足データ: {st.session_state.current_analysis}" if "current_analysis" in st.session_state else "")
-            chat = client.chats.create(model='models/gemini-2.0-flash', config={'system_instruction': SYSTEM_INSTRUCTION}, history=st.session_state.messages[:-1])
-            response = chat.send_message(full_prompt)
-            with st.chat_message("model"): st.markdown(response.text)
-            st.session_state.messages.append({"role": "model", "parts": [{"text": response.text}]})
-            save_history(st.session_state.messages)
-        except Exception as e:
-            st.error(f"シエル接続エラー: {e}")
+            # チャット入力
+            if prompt := st.chat_input("数理ロジックについて相談する..."):
+                st.session_state.messages.append({"role": "user", "parts": [{"text": prompt}]})
+                with st.chat_message("user"): 
+                    st.markdown(prompt)
+
+                try:
+                    full_prompt = prompt + (f"\n補足データ: {st.session_state.current_analysis}" if "current_analysis" in st.session_state else "")
+                    chat = client.chats.create(model='models/gemini-1.5-flash', config={'system_instruction': SYSTEM_INSTRUCTION}, history=st.session_state.messages[:-1])
+                    response = chat.send_message(full_prompt)
+                    with st.chat_message("model"): 
+                        st.markdown(response.text)
+                    st.session_state.messages.append({"role": "model", "parts": [{"text": response.text}]})
+                    save_history(st.session_state.messages)
+                except Exception as e:
+                    st.error(f"シエル接続エラー: {e}")
+        else:
+            # 未起動時のガイド表示
+            st.info("💡 解析数値の背後にある数学的根拠や、MUIT視点でのリスク評価を聞きたい場合は、上のチェックを入れてシエルを呼び出してください。")
+            st.caption("※シエルを起動するとAPI通信が発生します。")
+    else:
+        # 審査前
+        st.write("左側の「精密クロス審査を開始」を押すと、ここに解析エージェントが出現します。")
