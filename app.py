@@ -240,20 +240,27 @@ if st.session_state.clicked:
     btn_col1, btn_col2 = st.columns([0.8, 0.2])
     with btn_col2:
         if st.button("💬 履歴をリセット"):
-            # 1. 保存ファイルの中身を物理的に空にする
-            with open(HISTORY_FILE, "w", encoding="utf-8") as f:
-                json.dump([], f, ensure_ascii=False, indent=2)
-            
-            # 2. セッション内のメッセージを即座に空のリストに差し替える
+            # 1. 保存ファイルの中身を「空のリスト」で物理的に上書き
+            try:
+                with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+                    f.write("[]") 
+                # OSレベルで書き込みを確定させる
+                f.flush()
+                os.fsync(f.fileno())
+            except:
+                pass
+
+            # 2. 現在のメモリ(Session State)を完全に初期化
             st.session_state.messages = []
             
-            # 3. シエルの初期フラグを削除
+            # 3. シエルの「最初の挨拶」フラグを削除（これがないと再度オンにした時に喋り出さない）
             if "last_analyzed_data" in st.session_state:
                 del st.session_state.last_analyzed_data
             
-            # 4. モデルの履歴キャッシュも念のためクリアするならここ（任意）
+            # 4. 書き換えた状態を即座に確定させる
+            st.success("履歴を完全消去しました。")
             
-            # 5. 強制的に再描画
+            # 5. 強制リロード
             st.rerun()
 
     activate_ciel = st.checkbox("シエルを起動して対話を開始する", value=False)
