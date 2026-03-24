@@ -30,6 +30,12 @@ SYSTEM_INSTRUCTION = """
 2. 専門用語（3σ、ボラティリティ、情報利得等）を適切に使い、論理的整合性を最優先する。
 3. Keisuke様を「データサイエンスのパートナー」として扱い、高次元な議論を行う。
 """
+# --- 履歴保存をメモリのみに変更 ---
+def load_history():
+    return [] # 常に空で開始（ブラウザを閉じれば消える設定）
+
+def save_history(messages):
+    pass # ファイルに保存しない
 
 def load_history():
     if os.path.exists(HISTORY_FILE):
@@ -240,27 +246,14 @@ if st.session_state.clicked:
     btn_col1, btn_col2 = st.columns([0.8, 0.2])
     with btn_col2:
         if st.button("💬 履歴をリセット"):
-            # 1. 保存ファイルの中身を「空のリスト」で物理的に上書き
-            try:
-                with open(HISTORY_FILE, "w", encoding="utf-8") as f:
-                    f.write("[]") 
-                # OSレベルで書き込みを確定させる
-                f.flush()
-                os.fsync(f.fileno())
-            except:
-                pass
-
-            # 2. 現在のメモリ(Session State)を完全に初期化
+            # セッション内の全メッセージを消去
             st.session_state.messages = []
             
-            # 3. シエルの「最初の挨拶」フラグを削除（これがないと再度オンにした時に喋り出さない）
+            # シエルの「解析済みフラグ」も消去（これが残っていると再起動しない）
             if "last_analyzed_data" in st.session_state:
                 del st.session_state.last_analyzed_data
             
-            # 4. 書き換えた状態を即座に確定させる
-            st.success("履歴を完全消去しました。")
-            
-            # 5. 強制リロード
+            # 再描画
             st.rerun()
 
     activate_ciel = st.checkbox("シエルを起動して対話を開始する", value=False)
