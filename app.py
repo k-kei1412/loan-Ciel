@@ -254,7 +254,7 @@ if st.session_state.clicked:
             st.session_state.last_analyzed_data = st.session_state.current_analysis
             initial_prompt = f"現在の解析結果（{st.session_state.current_analysis}）を元に、数理的な総評を述べてください。"
             try:
-                chat = client.chats.create(model='gemini-1.5-flash', config={'system_instruction': SYSTEM_INSTRUCTION})
+                chat = client.chats.create(model='gemini-1.5-flash-latest', config={'system_instruction': SYSTEM_INSTRUCTION})
                 response = chat.send_message(initial_prompt)
                 with st.chat_message("model"): st.markdown(response.text)
                 st.session_state.messages.append({"role": "model", "parts": [{"text": response.text}]})
@@ -267,7 +267,7 @@ if st.session_state.clicked:
             st.session_state.messages.append({"role": "user", "parts": [{"text": prompt}]})
             with st.chat_message("user"): st.markdown(prompt)
             try:
-                chat = client.chats.create(model='gemini-1.5-flash', config={'system_instruction': SYSTEM_INSTRUCTION}, history=st.session_state.messages[:-1])
+                chat = client.chats.create(model='gemini-1.5-flash-latest', config={'system_instruction': SYSTEM_INSTRUCTION}, history=st.session_state.messages[:-1])
                 response = chat.send_message(prompt + f"\nContext: {st.session_state.current_analysis}")
                 with st.chat_message("model"): st.markdown(response.text)
                 st.session_state.messages.append({"role": "model", "parts": [{"text": response.text}]})
