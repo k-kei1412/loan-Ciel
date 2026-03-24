@@ -211,8 +211,8 @@ if st.session_state.clicked:
             c1.metric("実効リスク指数", f"{combined_risk * 100:.2f} %")
             c2.metric("実績事故率", f"{risk_pct:.1f} %")
             c3.metric("完済期待値", f"{final_expected_success:.1f} %")
-            st.write("### 👥 近しい過去事例（上位10件）")
-            st.dataframe(similar_cases.head(10)[["LoanStatus", "GrossApproval", "SBA_Ratio", "TermInMonths"]], use_container_width=True)
+            st.write("### 👥 近しい過去事例（上位100件）")
+            st.dataframe(similar_cases.head(100)[["LoanStatus", "GrossApproval", "SBA_Ratio", "TermInMonths"]], use_container_width=True)
         else:
             st.header("🔬 数理モデル解析")
             st.metric("倒産距離 (DD)", f"{dd:.2f}")
@@ -234,9 +234,18 @@ if st.session_state.clicked:
     btn_col1, btn_col2 = st.columns([0.8, 0.2])
     with btn_col2:
         if st.button("💬 履歴をリセット"):
+            # 1. メモリ上の履歴を空にする
             st.session_state.messages = []
-            if "last_analyzed_data" in st.session_state: del st.session_state.last_analyzed_data
-            save_history([])
+            
+            # 2. 保存ファイルを空のリストで上書きする（ここが重要！）
+            with open(HISTORY_FILE, "w", encoding="utf-8") as f:
+                json.dump([], f, ensure_ascii=False, indent=2)
+            
+            # 3. 自動思考フラグもリセット
+            if "last_analyzed_data" in st.session_state:
+                del st.session_state.last_analyzed_data
+            
+            # 4. 画面を強制リロードして反映
             st.rerun()
 
     activate_ciel = st.checkbox("シエルを起動して対話を開始する", value=False)
