@@ -277,7 +277,7 @@ if st.session_state.clicked:
             
             try:
                 # model名を 'gemini-1.5-flash' に統一
-                chat = client.chats.create(model='gemini-1.5-flash', config={'system_instruction': SYSTEM_INSTRUCTION})
+                chat = client.chats.create(model='models/gemini-flash-latest', config={'system_instruction': SYSTEM_INSTRUCTION})
                 response = chat.send_message(initial_prompt)
                 
                 with st.chat_message("model"): 
@@ -293,7 +293,7 @@ if st.session_state.clicked:
             st.session_state.messages.append({"role": "user", "parts": [{"text": prompt}]})
             with st.chat_message("user"): st.markdown(prompt)
             try:
-                chat = client.chats.create(model='gemini-1.5-flash', config={'system_instruction': SYSTEM_INSTRUCTION}, history=st.session_state.messages[:-1])
+                chat = client.chats.create(model='models/gemini-flash-latest', config={'system_instruction': SYSTEM_INSTRUCTION}, history=st.session_state.messages[:-1])
                 response = chat.send_message(prompt + f"\nContext: {st.session_state.current_analysis}")
                 with st.chat_message("model"): st.markdown(response.text)
                 st.session_state.messages.append({"role": "model", "parts": [{"text": response.text}]})
