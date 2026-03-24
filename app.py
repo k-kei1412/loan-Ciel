@@ -243,7 +243,7 @@ st.header("AI分析ボット：シエル")
 
 if st.session_state.clicked:
     # 履歴削除ボタン
-    btn_col1, btn_col2 = st.columns([0.8, 0.2])
+    btn_col1, btn_col2 = st.columns([0.7, 0.3])
     with btn_col2:
         if st.button("💬 履歴をリセット"):
             st.session_state.messages = []
