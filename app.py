@@ -376,6 +376,10 @@ if st.session_state.clicked:
             ax3.set_xlabel("Interest Rate (%)")
             ax3.set_ylabel("Expected Success (%)")
             st.pyplot(fig3)
+            
+        except Exception as e:
+            st.error(f"分析エラー: {e}")
+            
 
 # --- シエル対話エリア (下部配置) ---
 st.header("AI分析ボット：シエル")
