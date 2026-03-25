@@ -253,148 +253,148 @@ if st.session_state.clicked:
             
             c1, c2, c3 = st.columns(3)
             with c1:
-                    st.metric("実効リスク指数", f"{combined_risk * 100:.2f} %")
-                    reasons = []
-                    if gross >= 1000000: reasons.append("・100万ドル超の高額融資")
-                    if rate >= 20.0: reasons.append("・20%超の高金利")
-                    if term > dynamic_ceil: reasons.append("・返済期間の超過")
-                    if status == "安全": 
-                        st.success("総合判定: ✅ 安全")
-                    elif status == "注意":
-                        st.warning("総合判定: ⚠️ 注意")
-                        for r in reasons: st.caption(f":orange[{r}]")
-                    else:
-                        st.error("総合判定: 🚨 危険 (要精査)")
-                        for r in reasons: st.caption(f":red[{r}]")
-                with c2:
-                    st.metric(f"実績事故率 (類似100件)", f"{risk_pct:.1f} %")
-                    st.markdown(f"🔍 うち不履行事例: **{def_count}件**")
-                with c3:
-                    st.metric("完済期待値 (実務評価)", f"{final_expected_success:.1f} %")
-                st.write("### 💡 審査改善へのアクション案")
-                with st.expander("アドバイスの詳細を確認する", expanded=True):
-                    advice = []
-                    if gross >= 1000000: advice.append("⚠️ **金額の再検討**: 可能であれば分割融資または担保の積み増しを。")
-                    if term > dynamic_ceil: advice.append(f"✅ **期間の最適化**: {int(dynamic_ceil)}ヶ月以下への短縮を推奨。")
-                    if current_sba_ratio < 0.80: advice.append("✅ **保証枠の拡大**: 80%以上に引き上げるとリスク加重が半減します。")
-                    if not advice: st.write("✨ 現在の条件は論理的に非常に安定しています。")
-                    else:
-                        for a in advice: st.write(a)
+                st.metric("実効リスク指数", f"{combined_risk * 100:.2f} %")
+                reasons = []
+                if gross >= 1000000: reasons.append("・100万ドル超の高額融資")
+                if rate >= 20.0: reasons.append("・20%超の高金利")
+                if term > dynamic_ceil: reasons.append("・返済期間の超過")
+                if status == "安全": 
+                    st.success("総合判定: ✅ 安全")
+                elif status == "注意":
+                    st.warning("総合判定: ⚠️ 注意")
+                    for r in reasons: st.caption(f":orange[{r}]")
+                else:
+                    st.error("総合判定: 🚨 危険 (要精査)")
+                    for r in reasons: st.caption(f":red[{r}]")
+            with c2:
+                st.metric(f"実績事故率 (類似100件)", f"{risk_pct:.1f} %")
+                st.markdown(f"🔍 うち不履行事例: **{def_count}件**")
+            with c3:
+                st.metric("完済期待値 (実務評価)", f"{final_expected_success:.1f} %")
+            st.write("### 💡 審査改善へのアクション案")
+            with st.expander("アドバイスの詳細を確認する", expanded=True):
+                advice = []
+                if gross >= 1000000: advice.append("⚠️ **金額の再検討**: 可能であれば分割融資または担保の積み増しを。")
+                if term > dynamic_ceil: advice.append(f"✅ **期間の最適化**: {int(dynamic_ceil)}ヶ月以下への短縮を推奨。")
+                if current_sba_ratio < 0.80: advice.append("✅ **保証枠の拡大**: 80%以上に引き上げるとリスク加重が半減します。")
+                if not advice: st.write("✨ 現在の条件は論理的に非常に安定しています。")
+                else:
+                    for a in advice: st.write(a)
 
-                st.divider()
-                st.write("### ⚖️ 判断に影響した主要要素")
-                
-                # --- 重要度テーブルの修正（保証率を表示に組み込む） ---
-                importances = model.get_feature_importance()
-                imp_df = pd.DataFrame({'項目': expected_features, 'raw': importances})
-                
-                # SBAGuaranteedApproval（保証額）の重要度を「保証率（保全性）」として読み替えて表示
-                # 実務上、保証額が効いている＝保証の程度が効いているため
-                table_name_map_v2 = table_name_map.copy()
-                table_name_map_v2["SBAGuaranteedApproval"] = "保証率（保全性）"
-                imp_df.loc[imp_df['項目'] == 'TermInMonths', 'raw'] *= 0.55
-                imp_df.loc[imp_df['項目'] == 'GrossApproval', 'raw'] *= 1.7
-                imp_df.loc[imp_df['項目'] == 'SBAGuaranteedApproval', 'raw'] *= 3.2
-                imp_df.loc[imp_df['項目'] == 'NaicsSector', 'raw'] *= 1.6
-                imp_df.loc[imp_df['項目'] == 'InitialInterestRate', 'raw'] *= 1.3
-                
-                imp_df['項目名'] = imp_df['項目'].map(lambda x: table_name_map_v2.get(x, x))
-                display_imp = imp_df.groupby('項目名')['raw'].sum().reset_index()
-                display_imp['影響度(%)'] = (display_imp['raw'] / display_imp['raw'].sum() * 100).round(1)
-                st.table(display_imp.sort_values('影響度(%)', ascending=False).set_index('項目名')[['影響度(%)']])
+            st.divider()
+            st.write("### ⚖️ 判断に影響した主要要素")
+            
+            # --- 重要度テーブルの修正（保証率を表示に組み込む） ---
+            importances = model.get_feature_importance()
+            imp_df = pd.DataFrame({'項目': expected_features, 'raw': importances})
+            
+            # SBAGuaranteedApproval（保証額）の重要度を「保証率（保全性）」として読み替えて表示
+            # 実務上、保証額が効いている＝保証の程度が効いているため
+            table_name_map_v2 = table_name_map.copy()
+            table_name_map_v2["SBAGuaranteedApproval"] = "保証率（保全性）"
+            imp_df.loc[imp_df['項目'] == 'TermInMonths', 'raw'] *= 0.55
+            imp_df.loc[imp_df['項目'] == 'GrossApproval', 'raw'] *= 1.7
+            imp_df.loc[imp_df['項目'] == 'SBAGuaranteedApproval', 'raw'] *= 3.2
+            imp_df.loc[imp_df['項目'] == 'NaicsSector', 'raw'] *= 1.6
+            imp_df.loc[imp_df['項目'] == 'InitialInterestRate', 'raw'] *= 1.3
+            
+            imp_df['項目名'] = imp_df['項目'].map(lambda x: table_name_map_v2.get(x, x))
+            display_imp = imp_df.groupby('項目名')['raw'].sum().reset_index()
+            display_imp['影響度(%)'] = (display_imp['raw'] / display_imp['raw'].sum() * 100).round(1)
+            st.table(display_imp.sort_values('影響度(%)', ascending=False).set_index('項目名')[['影響度(%)']])
 
-                st.divider()
-                st.write("### 👥 条件が近い過去の事例（比較解析）")
-                # 表の中身も「保証率」に変更
-                current_row = pd.DataFrame({"状況": ["⭐ 今回の申請条件"], "融資額": [f"${gross:,}"], "保証率": [f"{current_sba_ratio*100:.1f}%"], "返済期間": [f"{term}ヶ月"], "LoanStatus": [-1]})
-                display_similar = similar_cases.head(100).copy()
-                display_similar['状況'] = display_similar['LoanStatus'].map({0: "✅ 完済", 1: "❌ 不履行"})
-                display_similar['融資額'] = display_similar['GrossApproval'].map(lambda x: f"${x:,.0f}")
-                display_similar['保証率'] = display_similar['SBA_Ratio'].map(lambda x: f"{x*100:.1f}%")
-                display_similar['返済期間'] = display_similar['TermInMonths'].map(lambda x: f"{x}ヶ月")
-                merged_display = pd.concat([current_row, display_similar[["状況", "融資額", "保証率", "返済期間", "LoanStatus"]]], ignore_index=True)
+            st.divider()
+            st.write("### 👥 条件が近い過去の事例（比較解析）")
+            # 表の中身も「保証率」に変更
+            current_row = pd.DataFrame({"状況": ["⭐ 今回の申請条件"], "融資額": [f"${gross:,}"], "保証率": [f"{current_sba_ratio*100:.1f}%"], "返済期間": [f"{term}ヶ月"], "LoanStatus": [-1]})
+            display_similar = similar_cases.head(100).copy()
+            display_similar['状況'] = display_similar['LoanStatus'].map({0: "✅ 完済", 1: "❌ 不履行"})
+            display_similar['融資額'] = display_similar['GrossApproval'].map(lambda x: f"${x:,.0f}")
+            display_similar['保証率'] = display_similar['SBA_Ratio'].map(lambda x: f"{x*100:.1f}%")
+            display_similar['返済期間'] = display_similar['TermInMonths'].map(lambda x: f"{x}ヶ月")
+            merged_display = pd.concat([current_row, display_similar[["状況", "融資額", "保証率", "返済期間", "LoanStatus"]]], ignore_index=True)
 
-                def style_row(row):
-                    if row['LoanStatus'] == -1: return ['background-color: #e1f5fe; font-weight: bold'] * len(row)
-                    elif row['LoanStatus'] == 1: return ['background-color: #ffebee; color: #c62828'] * len(row)
-                    return [''] * len(row)
-                st.dataframe(merged_display.style.apply(style_row, axis=1), column_order=("状況", "融資額", "保証率", "返済期間"), use_container_width=True)
+            def style_row(row):
+                if row['LoanStatus'] == -1: return ['background-color: #e1f5fe; font-weight: bold'] * len(row)
+                elif row['LoanStatus'] == 1: return ['background-color: #ffebee; color: #c62828'] * len(row)
+                return [''] * len(row)
+            st.dataframe(merged_display.style.apply(style_row, axis=1), column_order=("状況", "融資額", "保証率", "返済期間"), use_container_width=True)
 
-            else:
-                # --- 高度解析（SHAP解析などで input_df を使用） ---
-                st.header("🔬 数理モデルを用いた解析")
-                st.write("#### ⚖️ AIの判断根拠 (SHAP解析)")
-                explainer = shap.TreeExplainer(model)
-                shap_values = explainer(input_df) # ここで input_df を使用
-                shap_values.values = -shap_values.values 
-                
-                # グラフのラベルも修正
-                graph_name_map_v2 = graph_name_map.copy()
-                graph_name_map_v2["SBAGuaranteedApproval"] = "Guaranty Ratio"
-                shap_values.feature_names = [graph_name_map_v2.get(n, n) for n in expected_features]
-                
-                fig, ax = plt.subplots(figsize=(10, 6))
-                shap.plots.waterfall(shap_values[0], show=False)
-                st.pyplot(plt.gcf(), clear_figure=True)
-                
-                # --- 以下、Merton Modelなどは既存のまま ---
-                st.divider()
-                st.write("#### 📉 理論的倒産距離 (Merton Model)")
-                vol = st.slider("想定資産ボラティリティ (%)", 10, 100, 30) / 100
-                asset = float(gross) * 1.5
-                t_m = float(term) / 12
-                dd = (np.log(asset / gross) + (rate/100 - 0.5 * vol**2) * t_m) / (vol * np.sqrt(t_m))
-                edf = stats.norm.cdf(-dd) * 100
-                c_m1, c_m2 = st.columns(2)
-                with c_m1:
-                    st.metric("倒産距離 (DD)", f"{dd:.2f}")
-                    st.metric("デフォルト確率 (EDF)", f"{edf:.2f} %")
-                with c_m2:
-                    x = np.linspace(-4, 4, 100); y = stats.norm.pdf(x, 0, 1)
-                    fig2, ax2 = plt.subplots(figsize=(6, 3))
-                    ax2.plot(x, y, color="gray"); ax2.fill_between(x, y, where=(x < -dd), color='red', alpha=0.5)
-                    st.pyplot(fig2)
+        else:
+            # --- 高度解析（SHAP解析などで input_df を使用） ---
+            st.header("🔬 数理モデルを用いた解析")
+            st.write("#### ⚖️ AIの判断根拠 (SHAP解析)")
+            explainer = shap.TreeExplainer(model)
+            shap_values = explainer(input_df) # ここで input_df を使用
+            shap_values.values = -shap_values.values 
+            
+            # グラフのラベルも修正
+            graph_name_map_v2 = graph_name_map.copy()
+            graph_name_map_v2["SBAGuaranteedApproval"] = "Guaranty Ratio"
+            shap_values.feature_names = [graph_name_map_v2.get(n, n) for n in expected_features]
+            
+            fig, ax = plt.subplots(figsize=(10, 6))
+            shap.plots.waterfall(shap_values[0], show=False)
+            st.pyplot(plt.gcf(), clear_figure=True)
+            
+            # --- 以下、Merton Modelなどは既存のまま ---
+            st.divider()
+            st.write("#### 📉 理論的倒産距離 (Merton Model)")
+            vol = st.slider("想定資産ボラティリティ (%)", 10, 100, 30) / 100
+            asset = float(gross) * 1.5
+            t_m = float(term) / 12
+            dd = (np.log(asset / gross) + (rate/100 - 0.5 * vol**2) * t_m) / (vol * np.sqrt(t_m))
+            edf = stats.norm.cdf(-dd) * 100
+            c_m1, c_m2 = st.columns(2)
+            with c_m1:
+                st.metric("倒産距離 (DD)", f"{dd:.2f}")
+                st.metric("デフォルト確率 (EDF)", f"{edf:.2f} %")
+            with c_m2:
+                x = np.linspace(-4, 4, 100); y = stats.norm.pdf(x, 0, 1)
+                fig2, ax2 = plt.subplots(figsize=(6, 3))
+                ax2.plot(x, y, color="gray"); ax2.fill_between(x, y, where=(x < -dd), color='red', alpha=0.5)
+                st.pyplot(fig2)
 
-                with st.expander("📚 専門用語の解説：デフォルト確率と倒産距離", expanded=True):
-                    st.write("""
-                    **1. 倒産距離 (Distance to Default: DD)**
-                    企業の資産価値が、負債（融資額）の支払境界線からどれだけ離れているかを「標準偏差」の単位で表したもの。
-                    - 数値が高いほど安全。一般的に **2.0以上** が優良基準。
+            with st.expander("📚 専門用語の解説：デフォルト確率と倒産距離", expanded=True):
+                st.write("""
+                **1. 倒産距離 (Distance to Default: DD)**
+                企業の資産価値が、負債（融資額）の支払境界線からどれだけ離れているかを「標準偏差」の単位で表したもの。
+                - 数値が高いほど安全。一般的に **2.0以上** が優良基準。
 
-                    **2. デフォルト確率 (Expected Default Frequency: EDF)**
-                    マートン・モデルに基づき、将来的に企業の資産価値が負債額を下回る確率。
-                    - 上図の赤色の領域がEDF。
-                    """)
+                **2. デフォルト確率 (Expected Default Frequency: EDF)**
+                マートン・モデルに基づき、将来的に企業の資産価値が負債額を下回る確率。
+                - 上図の赤色の領域がEDF。
+                """)
 
-                st.divider()
-                st.write("#### 🧪 金利感度シミュレーション")
-                sim_rates = np.linspace(5.0, 30.0, 15)
-                sim_probs = [100 * (1 - model.predict_proba(Pool(input_df.assign(InitialInterestRate=r), cat_features=cat_idx))[0][1]) for r in sim_rates]
-                fig3, ax3 = plt.subplots(figsize=(10, 4))
-                ax3.plot(sim_rates, sim_probs, '-o', color="#0078D4", linewidth=2)
-                ax3.axvline(x=rate, color='red', linestyle='--')
-                ax3.set_xlabel("Interest Rate (%)")
-                ax3.set_ylabel("Expected Success (%)")
-                st.pyplot(fig3)
+            st.divider()
+            st.write("#### 🧪 金利感度シミュレーション")
+            sim_rates = np.linspace(5.0, 30.0, 15)
+            sim_probs = [100 * (1 - model.predict_proba(Pool(input_df.assign(InitialInterestRate=r), cat_features=cat_idx))[0][1]) for r in sim_rates]
+            fig3, ax3 = plt.subplots(figsize=(10, 4))
+            ax3.plot(sim_rates, sim_probs, '-o', color="#0078D4", linewidth=2)
+            ax3.axvline(x=rate, color='red', linestyle='--')
+            ax3.set_xlabel("Interest Rate (%)")
+            ax3.set_ylabel("Expected Success (%)")
+            st.pyplot(fig3)
 
 # --- シエル対話エリア (下部配置) ---
 st.header("AI分析ボット：シエル")
 
 if st.session_state.clicked:
-    # 履歴削除ボタン
-    btn_col1, btn_col2 = st.columns([0.7, 0.2])
-    with btn_col2:
-        if st.button("💬 履歴をリセット"):
-            st.session_state.messages = []
-            if "last_analyzed_data" in st.session_state:
-                del st.session_state.last_analyzed_data
-            # 物理ファイルを使わない設定にしている場合は、ここだけでOK
-            st.rerun()
+# 履歴削除ボタン
+btn_col1, btn_col2 = st.columns([0.7, 0.2])
+with btn_col2:
+    if st.button("💬 履歴をリセット"):
+        st.session_state.messages = []
+        if "last_analyzed_data" in st.session_state:
+            del st.session_state.last_analyzed_data
+        # 物理ファイルを使わない設定にしている場合は、ここだけでOK
+        st.rerun()
 
-    activate_ciel = st.checkbox("シエルを起動して対話を開始する", value=False)
-    
-    if activate_ciel:
-        st.info("シエルによる分析を開始します。")
+activate_ciel = st.checkbox("シエルを起動して対話を開始する", value=False)
+
+if activate_ciel:
+    st.info("シエルによる分析を開始します。")
         
         # --- ここからが「連動型」のロジック ---
         
