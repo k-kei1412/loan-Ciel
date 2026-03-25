@@ -382,23 +382,23 @@ if st.session_state.clicked:
             
 
 # --- シエル対話エリア (下部配置) ---
-st.header("AI分析ボット：シエル")
+st.header("🤖 数理エージェント・シエル")
 
 if st.session_state.clicked:
-# 履歴削除ボタン
-btn_col1, btn_col2 = st.columns([0.7, 0.2])
-with btn_col2:
-    if st.button("💬 履歴をリセット"):
-        st.session_state.messages = []
-        if "last_analyzed_data" in st.session_state:
-            del st.session_state.last_analyzed_data
-        # 物理ファイルを使わない設定にしている場合は、ここだけでOK
-        st.rerun()
+    # 履歴削除ボタン
+    btn_col1, btn_col2 = st.columns([0.7, 0.2])
+    with btn_col2:
+        if st.button("💬 履歴をリセット"):
+            st.session_state.messages = []
+            if "last_analyzed_data" in st.session_state:
+                del st.session_state.last_analyzed_data
+            # 物理ファイルを使わない設定にしている場合は、ここだけでOK
+            st.rerun()
 
-activate_ciel = st.checkbox("シエルを起動して対話を開始する", value=False)
-
-if activate_ciel:
-    st.info("シエルによる分析を開始します。")
+    activate_ciel = st.checkbox("シエルを起動して対話を開始する", value=False)
+    
+    if activate_ciel:
+        st.info("Mathematical Reasoning Mode: ON")
         
         # --- ここからが「連動型」のロジック ---
         
@@ -420,7 +420,7 @@ if activate_ciel:
             
             try:
                 # model名を 'gemini-1.5-flash' に統一
-                chat = client.chats.create(model='models/gemini-flash-latest', config={'system_instruction': SYSTEM_INSTRUCTION})
+                chat = client.chats.create(model='gemini-1.5-flash', config={'system_instruction': SYSTEM_INSTRUCTION})
                 response = chat.send_message(initial_prompt)
                 
                 with st.chat_message("model"): 
@@ -436,7 +436,7 @@ if activate_ciel:
             st.session_state.messages.append({"role": "user", "parts": [{"text": prompt}]})
             with st.chat_message("user"): st.markdown(prompt)
             try:
-                chat = client.chats.create(model='models/gemini-flash-latest', config={'system_instruction': SYSTEM_INSTRUCTION}, history=st.session_state.messages[:-1])
+                chat = client.chats.create(model='gemini-1.5-flash', config={'system_instruction': SYSTEM_INSTRUCTION}, history=st.session_state.messages[:-1])
                 response = chat.send_message(prompt + f"\nContext: {st.session_state.current_analysis}")
                 with st.chat_message("model"): st.markdown(response.text)
                 st.session_state.messages.append({"role": "model", "parts": [{"text": response.text}]})
