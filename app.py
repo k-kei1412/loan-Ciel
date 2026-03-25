@@ -176,11 +176,14 @@ with st.sidebar:
     submit = st.button("精密クロス審査を開始", on_click=click_button)
 
 # --- メイン解析エリア ---
-# col_main の中身を通常の st 空間に配置（全幅表示）
 if st.session_state.clicked:
     try:
-        # (解析ロジックは変更なしのため省略。中身はそのまま維持してください)
+        # --- 1. 定数と判定用フラグの定義（ここを追加！） ---
         current_sba_ratio = sba / gross if gross > 0 else 0
+        sba_bonus_flag = current_sba_ratio > 0.8  # 保証率80%超をボーナス判定
+        dynamic_ceil = 120  # 返済期間の適正上限（例として120ヶ月）
+        
+        # --- 2. 入力データの作成 ---
         input_data_raw = {
             "GrossApproval": float(gross), 
             "SBAGuaranteedApproval": float(sba),
