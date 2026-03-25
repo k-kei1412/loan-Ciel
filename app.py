@@ -386,21 +386,18 @@ st.header("🤖 数理エージェント・シエル")
 
 if st.session_state.clicked:
     # 履歴削除ボタン
-    btn_col1, btn_col2 = st.columns([0.7, 0.2])
+    btn_col1, btn_col2 = st.columns([0.8, 0.2])
     with btn_col2:
         if st.button("💬 履歴をリセット"):
             st.session_state.messages = []
             if "last_analyzed_data" in st.session_state:
                 del st.session_state.last_analyzed_data
-            # 物理ファイルを使わない設定にしている場合は、ここだけでOK
             st.rerun()
 
     activate_ciel = st.checkbox("シエルを起動して対話を開始する", value=False)
     
     if activate_ciel:
         st.info("Mathematical Reasoning Mode: ON")
-        
-        # --- ここからが「連動型」のロジック ---
         
         # 1. データ更新チェック
         is_data_updated = (
@@ -419,7 +416,7 @@ if st.session_state.clicked:
             initial_prompt = f"入力パラメータが更新されました。最新の解析結果（{st.session_state.current_analysis}）に基づき、数理的な再評価を述べてください。"
             
             try:
-                # model名を 'gemini-1.5-flash' に統一
+                # インデント注意：tryの中身は4マス下げる
                 chat = client.chats.create(model='gemini-1.5-flash', config={'system_instruction': SYSTEM_INSTRUCTION})
                 response = chat.send_message(initial_prompt)
                 
@@ -429,16 +426,19 @@ if st.session_state.clicked:
                 # 履歴に追加
                 st.session_state.messages.append({"role": "model", "parts": [{"text": response.text}]})
             except Exception as e:
+                # インデント注意：exceptはtryと同じ位置に揃える
                 st.warning(f"シエルの再考に失敗しました: {e}")
 
         # 4. ユーザーからの自由入力
         if prompt := st.chat_input("この解析結果について質問する..."):
             st.session_state.messages.append({"role": "user", "parts": [{"text": prompt}]})
-            with st.chat_message("user"): st.markdown(prompt)
+            with st.chat_message("user"): 
+                st.markdown(prompt)
             try:
                 chat = client.chats.create(model='gemini-1.5-flash', config={'system_instruction': SYSTEM_INSTRUCTION}, history=st.session_state.messages[:-1])
                 response = chat.send_message(prompt + f"\nContext: {st.session_state.current_analysis}")
-                with st.chat_message("model"): st.markdown(response.text)
+                with st.chat_message("model"): 
+                    st.markdown(response.text)
                 st.session_state.messages.append({"role": "model", "parts": [{"text": response.text}]})
             except Exception as e:
                 st.error(f"シエル接続エラー: {e}")
