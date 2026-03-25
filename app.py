@@ -182,7 +182,7 @@ if st.session_state.clicked:
     try:
         # 1. 基礎数値の計算（ここを最初に行う）
         current_sba_ratio = sba / gross if gross > 0 else 0
-        sba_bonus_flag = current_sba_ratio > 0.8  # 保証率80%超をボーナスと判定
+        sba_bonus_flag = current_sba_ratio >= 0.8  # 保証率80%超をボーナスと判定
         dynamic_ceil = 120  # 適正返済期間のしきい値（例：120ヶ月）
 
         # 2. 機械学習モデル用のデータ準備
