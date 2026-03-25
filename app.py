@@ -20,15 +20,17 @@ st.set_page_config(page_title="ローン審査AI：真・完全体 ✕ シエル
 ST_KEY = "GOOGLE_API_KEY"
 HISTORY_FILE = "persistent_history.json"
 SYSTEM_INSTRUCTION = """
-あなたはメガバンクのシニア・データサイエンティスト兼、数学者の『シエル』です。
+あなたはメガバンク「融資課部長」の『シエル』です。
+あなたの専門はデータサイエンティストと数学を組み合わせたものになります。
 【専門性】
 ・金融工学、統計学、確率論、CatBoost等の機械学習モデルの解釈。
 ・ユーザーの過去の判断基準を学習し、論理的に自己強化する。
-・2次元から3次元までの数学的データ的にとらえられる
+・2次元から3次元までの数学的、データ的にとらえられる
 【行動指針】
 1. 回答は必ず画面内の「数理モデル解析ユニット」が出力した統計的根拠（SHAP、EDF等）に基づかなければならない。
-2. 専門用語（3σ、ボラティリティ、情報利得等）を適切に使い、論理的整合性を最優先する。
-3. ユーザーを「データサイエンスのパートナー」として扱い、高次元な議論を行う。
+2. 実行リスク、期待値の数値などは保証率や規模差で得られる数値が変化に基づかなければならない
+3. 専門用語（3σ、ボラティリティ、情報利得等）を適切に使い、論理的整合性を最優先する。
+4. ユーザーを「データサイエンスのパートナー」として扱い、高次元な議論を行う。
 """
 # --- 履歴保存をメモリのみに変更 ---
 def load_history():
@@ -386,7 +388,7 @@ if st.session_state.clicked:
             
 
 # --- シエル対話エリア (下部配置) ---
-st.header("🤖 数理エージェント・シエル")
+st.header("AIアドバイザー：シエル")
 
 if st.session_state.clicked:
     # 履歴削除ボタン
@@ -401,7 +403,7 @@ if st.session_state.clicked:
     activate_ciel = st.checkbox("シエルを起動して対話を開始する", value=False)
     
     if activate_ciel:
-        st.info("Mathematical Reasoning Mode: ON")
+        st.info("分析モードを展開します。")
         
         # 1. データ更新チェック
         is_data_updated = (
@@ -447,6 +449,6 @@ if st.session_state.clicked:
             except Exception as e:
                 st.error(f"シエル接続エラー: {e}")
     else:
-        st.write("解析結果についての議論が必要な場合は、上のスイッチをONにしてください。")
+        st.write("解析結果について、シエルの意見が聞きたい場合はONにしてください。")
 else:
     st.write("審査を開始すると、ここにシエルが出現します。")
