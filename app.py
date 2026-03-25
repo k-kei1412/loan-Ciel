@@ -178,12 +178,12 @@ with st.sidebar:
 # --- メイン解析エリア ---
 if st.session_state.clicked:
     try:
-        # --- 1. 定数と判定用フラグの定義（ここを追加！） ---
+        # 1. 基礎数値の計算（ここを最初に行う）
         current_sba_ratio = sba / gross if gross > 0 else 0
-        sba_bonus_flag = current_sba_ratio > 0.8  # 保証率80%超をボーナス判定
-        dynamic_ceil = 120  # 返済期間の適正上限（例として120ヶ月）
-        
-        # --- 2. 入力データの作成 ---
+        sba_bonus_flag = current_sba_ratio > 0.8  # 保証率80%超をボーナスと判定
+        dynamic_ceil = 120  # 適正返済期間のしきい値（例：120ヶ月）
+
+        # 2. 機械学習モデル用のデータ準備
         input_data_raw = {
             "GrossApproval": float(gross), 
             "SBAGuaranteedApproval": float(sba),
@@ -204,13 +204,13 @@ if st.session_state.clicked:
         for col in expected_features:
             if col not in input_df.columns:
                 input_df[col] = 0.0
-        input_df = input_df[expected_features] # ここで定義確定
+        input_df = input_df[expected_features]
             
         cat_idx = [i for i, col in enumerate(input_df.columns) if input_df[col].dtype == 'object']
         preds = model.predict_proba(Pool(input_df, cat_features=cat_idx))
         raw_proba = preds[0][1] if len(preds) > 0 else 0.5
 
-        # 類似検索
+        # 3. 類似検索の実行
         search_pool = train_df[train_df['NaicsSector'] == sector_en].copy()
         if len(search_pool) < 10: search_pool = train_df.copy()
         search_features = ["GrossApproval", "InitialInterestRate", "TermInMonths", "SBA_Ratio"]
@@ -221,17 +221,18 @@ if st.session_state.clicked:
         nn = NearestNeighbors(n_neighbors=min(100, len(search_pool))); nn.fit(train_scaled)
         distances, indices = nn.kneighbors(input_scaled)
         similar_cases = search_pool.iloc[indices[0]].copy()
+        
+        # --- 重要：ここで def_count を計算 ---
         risk_pct = similar_cases['LoanStatus'].mean() * 100
+        def_count = len(similar_cases[similar_cases['LoanStatus'] == 1])
 
-        # リスク計算
+        # 4. 完済期待値の算出
         strict_proba = np.clip(raw_proba, 0.01, 0.99)
-        combined_risk = (strict_proba * 0.4) + (risk_pct / 100 * 0.6) # 簡易化
+        combined_risk = (strict_proba * 0.4) + (risk_pct / 100 * 0.6)
         final_expected_success = max(5.0, min(98.5, (1.0 - combined_risk) * 100))
-        # Merton DD
-        vol = 30 / 100; asset = float(gross) * 1.5; t_m = float(term) / 12
-        dd = (np.log(asset / gross) + (rate/100 - 0.5 * vol**2) * t_m) / (vol * np.sqrt(t_m))
-        edf = stats.norm.cdf(-dd) * 100
 
+        # --- シエルへのコンテキスト共有用 ---
+        st.session_state.current_analysis = f"期待完済率:{final_expected_success:.1f}%, 類似事故率:{risk_pct:.1f}%"
         if app_mode == "総合報告書":
             st.subheader("🏁 総合審査報告書")
             st.write("### 🔍 実務者への重点確認事項")
