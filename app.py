@@ -421,7 +421,7 @@ if st.session_state.clicked:
             
             try:
                 # インデント注意：tryの中身は4マス下げる
-                chat = client.chats.create(model='gemini-1.5-flash', config={'system_instruction': SYSTEM_INSTRUCTION})
+                chat = client.chats.create(model='models/gemini-flash-latest', config={'system_instruction': SYSTEM_INSTRUCTION})
                 response = chat.send_message(initial_prompt)
                 
                 with st.chat_message("model"): 
@@ -439,7 +439,7 @@ if st.session_state.clicked:
             with st.chat_message("user"): 
                 st.markdown(prompt)
             try:
-                chat = client.chats.create(model='gemini-1.5-flash', config={'system_instruction': SYSTEM_INSTRUCTION}, history=st.session_state.messages[:-1])
+                chat = client.chats.create(model='models/gemini-flash-latest', config={'system_instruction': SYSTEM_INSTRUCTION}, history=st.session_state.messages[:-1])
                 response = chat.send_message(prompt + f"\nContext: {st.session_state.current_analysis}")
                 with st.chat_message("model"): 
                     st.markdown(response.text)
