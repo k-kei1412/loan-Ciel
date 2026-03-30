@@ -38,7 +38,7 @@ def load_history():
     return [] # 常に空で開始（ブラウザを閉じれば消える設定）
 
 def save_history(messages):
-    pass # ファイルに保存しない
+    pass # ファイルに保存しない
 
 def load_history():
     if os.path.exists(HISTORY_FILE):
