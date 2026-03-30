@@ -231,7 +231,7 @@ if st.session_state.clicked:
 
         # 4. 完済期待値の算出
         strict_proba = np.clip(raw_proba, 0.01, 0.99)
-        combined_risk = (strict_proba * 0.4) + (risk_pct / 100 * 0.6)
+        combined_risk = (strict_proba * 0.35) + (risk_pct / 100 * 0.65)
         final_expected_success = max(5.0, min(98.5, (1.0 - combined_risk) * 100))
 
         # --- シエルへのコンテキスト共有用 ---
