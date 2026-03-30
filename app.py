@@ -176,7 +176,7 @@ with st.sidebar:
     collateral = st.selectbox("担保の有無", ["あり (Y)", "なし (N)"])
     collateral_val = "Y" if "あり" in collateral else "N"
     
-    submit = st.button("精密クロス審査を開始", on_click=click_button)
+    submit = st.button("ローン審査開始", on_click=click_button)
 
 # --- メイン解析エリア ---
 if st.session_state.clicked:
