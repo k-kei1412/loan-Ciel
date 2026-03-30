@@ -241,7 +241,7 @@ if st.session_state.clicked:
         amount_penalty = num_steps * risk_step_rate
         
         # AIの予測(20%) + 類似事故率(80%) のベースリスクを計算
-        base_combined_risk = (strict_proba * 0.2) + (risk_pct / 100 * 0.8)
+        base_combined_risk = (strict_proba * 0.3) + (risk_pct / 100 * 0.7)
         
         # ベースリスクに金額ペナルティを加算
         combined_risk = base_combined_risk + amount_penalty
