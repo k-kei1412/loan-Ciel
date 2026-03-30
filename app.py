@@ -252,13 +252,13 @@ if st.session_state.clicked:
                 status = "安全" if final_expected_success > 92 else "注意" if final_expected_success > 75 else "危険"
 
             if sba_bonus_flag:
-                st.success(f"🛡️ **【保全インセンティブ適用】** 保証率80%超により高額融資リスクを50%軽減。")
+                st.success(f"🛡️ **【保全インセンティブ適用】** 保証率80%超により高額融資リスクを50%軽減")
             if 500000 <= gross < 1000000:
-                st.info(f"📂 **【中規模案件】** 50万ドル超の中堅企業向け融資。リスク加重適用中。")
+                st.info(f"📂 **【中規模案件】** 50万ドル超の中堅企業向け融資。リスク加重適用中")
             if term > dynamic_ceil:
-                st.warning(f"⏳ **【期間超過】** 適正上限（{int(dynamic_ceil)}ヶ月）を超過。")
+                st.warning(f"⏳ **【期間超過】** 適正上限（{int(dynamic_ceil)}ヶ月）を超過")
             if rate >= 20.0:
-                st.warning(f"💰 **【高金利】** 金利が20%を超えています。内容を精査してください")
+                st.warning(f"💰 **【高金利アラート】** 金利が20%を超えています。内容を精査してください")
             
             c1, c2, c3 = st.columns(3)
             with c1:
