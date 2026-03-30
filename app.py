@@ -140,7 +140,7 @@ def click_button():
     st.session_state.clicked = True
 
 # --- UI構成 ---
-st.title("🏦 中小企業向けローン返済予測 AIシステム")
+st.title("🏦 中小企業向けローン返済予測"\n "AIシステム")
 
 # 以前の st.columns([0.65, 0.35]) を削除し、1カラム構成にします。
 # これにより、シエルは自動的に解析結果の下に配置されます。
