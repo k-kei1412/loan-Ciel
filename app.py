@@ -231,23 +231,27 @@ if st.session_state.clicked:
 
         # --- 4. 完済期待値の算出 (修正版) ---
 
-        # 10万ドル（100,000）単位で区切り、その回数分だけ 8%のリスクを加算
-        # 例: 15万ドルなら 1回(8%)、50万ドルなら 5回(40%)
+        # 4. 完済期待値の算出 (修正版)
+        strict_proba = np.clip(raw_proba, 0.01, 0.99) # ここでまず定義
+        
+        # --- 【新規】10万ドル単位の階段型ペナルティ ---
         step_unit = 100000
         risk_step_rate = 0.08
         num_steps = int(gross // step_unit)
         amount_penalty = num_steps * risk_step_rate
         
-        # AIの予測確率 (strict_proba) と 類似事例の事故率 (risk_pct) に、
-        # 金額による「階段状ペナルティ」を合成
+        # AIの予測(20%) + 類似事故率(80%) のベースリスクを計算
         base_combined_risk = (strict_proba * 0.2) + (risk_pct / 100 * 0.8)
+        
+        # ベースリスクに金額ペナルティを加算
         combined_risk = base_combined_risk + amount_penalty
         
-        # リスクが100%を超えないように、かつ最低限の成功確率(1.5%)を確保するためにクリップ
+        # リスクが100%を超えないよう調整（最大98.5%）
         combined_risk = min(0.985, combined_risk)
         
-        # 最終的な完済期待値を算出
+        # 最終的な完済期待値を算出（最低1.5%を保証）
         final_expected_success = max(1.5, (1.0 - combined_risk) * 100)
+        
         # --- シエルへのコンテキスト共有用 ---
         st.session_state.current_analysis = f"期待完済率:{final_expected_success:.1f}%, 類似事故率:{risk_pct:.1f}%"
         if app_mode == "総合報告書":
