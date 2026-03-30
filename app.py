@@ -41,7 +41,7 @@ def save_history(messages):
     pass # ファイルに保存しない
 
 def load_history():
-    if os.path.exists(HISTORY_FILE):
+    if os.path.exists(HISTORY_FILE):
         try:
             with open(HISTORY_FILE, "r", encoding="utf-8") as f: return json.load(f)
         except: return []
