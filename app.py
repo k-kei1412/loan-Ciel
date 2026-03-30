@@ -140,7 +140,7 @@ def click_button():
     st.session_state.clicked = True
 
 # --- UI構成 ---
-st.markdown("<h1 style='text-align: center;'>🏦 中小企業向けローン返済予測<br>AIシステム:シエル</h1>", unsafe_allow_html=True)
+st.markdown("<h1 style='text-align: center;'>🏦 中小企業向けローン返済予測<br>AIシステム : シエル</h1>", unsafe_allow_html=True)
 
 # 以前の st.columns([0.65, 0.35]) を削除し、1カラム構成にします。
 # これにより、シエルは自動的に解析結果の下に配置されます。
