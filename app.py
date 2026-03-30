@@ -14,7 +14,7 @@ import matplotlib.font_manager as fm
 from google import genai # シエル（Gemini API）
 
 # 1. ページ設定
-st.set_page_config(page_title="ローン審査AI：真・完全体 ✕ シエル", layout="wide")
+st.set_page_config(page_title="ローン審査AI： シエル", layout="wide")
 
 # --- 【追加】シエル（AI）の基本設定 ---
 ST_KEY = "GOOGLE_API_KEY"
