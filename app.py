@@ -258,7 +258,7 @@ if st.session_state.clicked:
             if term > dynamic_ceil:
                 st.warning(f"⏳ **【期間超過】** 適正上限（{int(dynamic_ceil)}ヶ月）を超過。")
             if rate >= 20.0:
-                st.warning(f"**【高金利】**金利が20%を超えています。内容を精査してください")
+                st.warning(f"💰 **【高金利】** 金利が20%を超えています。内容を精査してください")
             
             c1, c2, c3 = st.columns(3)
             with c1:
