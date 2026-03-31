@@ -247,6 +247,12 @@ if st.session_state.clicked:
         combined_risk = np.clip(combined_risk, 0.02, 0.99)
         final_expected_success = max(5.0, min(98.5, (1.0 - combined_risk) * 100))
 
+        # --- ここでシエルに渡すデータを確定させる ---
+        st.session_state.current_analysis = (
+            f"期待完済率:{final_expected_success:.1f}%, "
+            f"類似事故率:{risk_pct:.1f}%, "
+            f"実効リスク指数:{combined_risk*100:.2f}%"
+        )
         
         if app_mode == "総合報告書":
             st.subheader("🏁 総合審査報告書")
