@@ -204,25 +204,49 @@ if st.session_state.clicked:
         preds = model.predict_proba(Pool(input_df, cat_features=cat_idx))
         raw_proba = preds[0][1] if len(preds) > 0 else 0.5
 
-        search_pool = train_df[train_df['NaicsSector'] == sector_en].copy()
-        if len(search_pool) < 10: search_pool = train_df.copy()
-        search_features = ["GrossApproval", "InitialInterestRate", "TermInMonths", "SBA_Ratio"]
-        train_num = search_pool[search_features].fillna(0).copy()
-        train_num["TermInMonths"] = np.log1p(train_num["TermInMonths"])
-        input_num = pd.DataFrame([{"GrossApproval": float(gross), "InitialInterestRate": float(rate), "TermInMonths": np.log1p(float(term)), "SBA_Ratio": float(current_sba_ratio)}])
-        scaler = StandardScaler(); train_scaled = scaler.fit_transform(train_num); input_scaled = scaler.transform(input_num)
-        nn = NearestNeighbors(n_neighbors=min(100, len(search_pool))); nn.fit(train_scaled)
-        distances, indices = nn.kneighbors(input_scaled)
-        similar_cases = search_pool.iloc[indices[0]].copy()
-        
-        risk_pct = similar_cases['LoanStatus'].mean() * 100
-        def_count = len(similar_cases[similar_cases['LoanStatus'] == 1])
+        # --- B. 類似事例検索 ---
+            search_pool = train_df[train_df['NaicsSector'] == sector_en].copy()
+            if len(search_pool) < 100: search_pool = train_df.copy()
+            search_features = ["GrossApproval", "InitialInterestRate", "TermInMonths", "SBA_Ratio"]
+            train_num = search_pool[search_features].fillna(0)
+            input_num = input_df[["GrossApproval", "InitialInterestRate", "TermInMonths"]].copy()
+            input_num["SBA_Ratio"] = current_sba_ratio
+            scaler = StandardScaler()
+            weights = np.array([1.2, 1.0, 1.0, 2.0]) 
+            train_scaled = scaler.fit_transform(train_num) * weights
+            input_scaled = scaler.transform(input_num) * weights
+            nn = NearestNeighbors(n_neighbors=min(100, len(search_pool)))
+            nn.fit(train_scaled)
+            _, indices = nn.kneighbors(input_scaled)
+            similar_cases = search_pool.iloc[indices[0]].copy()
+            risk_pct = similar_cases['LoanStatus'].mean() * 100
+            def_count = int(similar_cases['LoanStatus'].sum())
 
-        strict_proba = np.clip(raw_proba, 0.01, 0.99)
-        combined_risk = (strict_proba * 0.4) + (risk_pct / 100 * 0.6)
-        final_expected_success = max(5.0, min(98.5, (1.0 - combined_risk) * 100))
+            # --- C. 数値正常化ロジック (金融実務最適化) ---
+            strict_proba = np.clip(raw_proba, 0.01, 0.99)
+            dynamic_ceil = 84 + (min(gross, 2000000) / 2000000) * 36
+            term_gap = max(0.0, (term - dynamic_ceil) / 100.0) * 0.7 if term > dynamic_ceil else 0.0
 
-        st.session_state.current_analysis = f"期待完済率:{final_expected_success:.1f}%, 類似事故率:{risk_pct:.1f}%"
+            gross_risk = 0.0
+            sba_bonus_flag = False
+            if gross >= 1000000: gross_risk = 0.40 + (gross - 1000000) / 1000000
+            elif gross > 500000: gross_risk = ((gross - 500000) // 100000) * 0.04
+            if current_sba_ratio >= 0.80:
+                gross_risk *= 0.5
+                sba_bonus_flag = True
+
+            rate_risk = max(0, (rate - 18.0) / 10.0) * 0.3
+            if rate > 20.0: rate_risk += 0.1
+            base_risk_idx = (strict_proba * 0.4) + (risk_pct / 100 * 0.6)
+            stability_bonus = 1.0
+            if term <= dynamic_ceil: stability_bonus *= 0.8
+            if rate <= 15.0: stability_bonus *= 0.9
+            sba_offset = 0.65 if current_sba_ratio >= 0.75 else 0.85 if current_sba_ratio >= 0.50 else 1.0
+            
+            combined_risk = (base_risk_idx * stability_bonus * sba_offset) + term_gap + gross_risk + rate_risk
+            combined_risk = np.clip(combined_risk, 0.02, 0.99)
+            final_expected_success = max(5.0, min(98.5, (1.0 - combined_risk) * 100))
+
         
         if app_mode == "総合報告書":
             st.subheader("🏁 総合審査報告書")
