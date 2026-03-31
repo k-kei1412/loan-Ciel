@@ -292,9 +292,14 @@ if st.session_state.clicked:
             st.write("### 💡 審査改善へのアクション案")
             with st.expander("アドバイスの詳細を確認する", expanded=True):
                 advice = []
-                if gross >= 1000000: advice.append("⚠️ **金額の再検討**: 可能であれば分割融資または担保の積み増しを。")
-                if term > dynamic_ceil: advice.append(f"✅ **期間の最適化**: {int(dynamic_ceil)}ヶ月以下への短縮を推奨。")
-                if current_sba_ratio < 0.80: advice.append("✅ **保証枠の拡大**: 80%以上に引き上げるとリスク加重が半減します。")
+                if gross >= 1000000:
+                    advice.append("⚠️ **金額の再検討**: 可能であれば分割融資または担保の積み増しを。")
+                if term > dynamic_ceil:
+                    advice.append(f"✅ **期間の最適化**: {int(dynamic_ceil)}ヶ月以下への短縮を推奨。")
+                if current_sba_ratio < 0.80:
+                    advice.append("✅ **保証枠の拡大**: 80%以上に引き上げるとリスク加重が半減します。")
+                if rate >= 20:
+                    advice.append(f"⚠️ **金利の再検討** 他社では借りられない可能性があり。精査してください。")
                 if not advice: st.write("✨ 現在の条件は論理的に非常に安定しています。")
                 else:
                     for a in advice: st.write(a)
