@@ -242,6 +242,8 @@ if st.session_state.clicked:
                 st.info(f"📂 **【中規模案件】** 50万ドル超の中堅企業向け融資。リスク加重適用中。")
             if term > dynamic_ceil:
                 st.warning(f"⏳ **【期間超過】** 適正上限（{int(dynamic_ceil)}ヶ月）を超過。")
+            if rate >= 20:
+                st.warning(f"💰 **【高金利アラート】**金利が20％を超えています。内容を精査してください。")
             
             c1, c2, c3 = st.columns(3)
             with c1:
