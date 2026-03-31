@@ -272,28 +272,49 @@ if st.session_state.clicked:
             c1, c2, c3 = st.columns(3)
             with c1:
                 st.metric("実効リスク指数", f"{combined_risk * 100:.2f} %")
-                if status == "安全": st.success("総合判定: ✅ 安全")
-                elif status == "注意": st.warning("総合判定: ⚠️ 注意")
-                else: st.error("総合判定: 🚨 危険 (要精査)")
+                reasons = []
+                if gross >= 1000000: reasons.append("・100万ドル超の高額融資")
+                if rate >= 20.0: reasons.append("・20%超の高金利")
+                if term > dynamic_ceil: reasons.append("・返済期間の超過")
+                if status == "安全":
+                    st.success("総合判定: ✅ 安全")
+                elif status == "注意":
+                    st.warning("総合判定: ⚠️ 注意")
+                    for r in reasons: st.caption(f":orange[{r}]")
+                else:
+                    st.error("総合判定: 🚨 危険 (要精査)")
+                    for r in reasons: st.caption(f":red[{r}]")
             with c2:
                 st.metric(f"実績事故率 (類似100件)", f"{risk_pct:.1f} %")
                 st.markdown(f"🔍 うち不履行事例: **{def_count}件**")
             with c3:
                 st.metric("完済期待値 (実務評価)", f"{final_expected_success:.1f} %")
+            st.write("### 💡 審査改善へのアクション案")
+            with st.expander("アドバイスの詳細を確認する", expanded=True):
+                advice = []
+                if gross >= 1000000: advice.append("⚠️ **金額の再検討**: 可能であれば分割融資または担保の積み増しを。")
+                if term > dynamic_ceil: advice.append(f"✅ **期間の最適化**: {int(dynamic_ceil)}ヶ月以下への短縮を推奨。")
+                if current_sba_ratio < 0.80: advice.append("✅ **保証枠の拡大**: 80%以上に引き上げるとリスク加重が半減します。")
+                if not advice: st.write("✨ 現在の条件は論理的に非常に安定しています。")
+                else:
+                    for a in advice: st.write(a)
 
             st.divider()
-            st.write("### ⚖️ 判断に影響した主要要素")
-            importances = model.get_feature_importance()
-            imp_df = pd.DataFrame({'項目': expected_features, 'raw': importances})
-            table_name_map_v2 = table_name_map.copy()
-            table_name_map_v2["SBAGuaranteedApproval"] = "保証率（保全性）"
-            imp_df.loc[imp_df['項目'] == 'TermInMonths', 'raw'] *= 0.55
-            imp_df.loc[imp_df['項目'] == 'GrossApproval', 'raw'] *= 1.7
-            imp_df.loc[imp_df['項目'] == 'SBAGuaranteedApproval', 'raw'] *= 3.2
-            imp_df['項目名'] = imp_df['項目'].map(lambda x: table_name_map_v2.get(x, x))
-            display_imp = imp_df.groupby('項目名')['raw'].sum().reset_index()
-            display_imp['影響度(%)'] = (display_imp['raw'] / display_imp['raw'].sum() * 100).round(1)
-            st.table(display_imp.sort_values('影響度(%)', ascending=False).set_index('項目名')[['影響度(%)']])
+            st.write("### 👥 条件が近い過去の事例（比較解析）")
+            # 表の中身も「保証率」に変更
+            current_row = pd.DataFrame({"状況": ["⭐ 今回の申請条件"], "融資額": [f"${gross:,}"], "保証率": [f"{current_sba_ratio*100:.1f}%"], "返済期間": [f"{term}ヶ月"], "LoanStatus": [-1]})
+            display_similar = similar_cases.head(100).copy()
+            display_similar['状況'] = display_similar['LoanStatus'].map({0: "✅ 完済", 1: "❌ 不履行"})
+            display_similar['融資額'] = display_similar['GrossApproval'].map(lambda x: f"${x:,.0f}")
+            display_similar['保証率'] = display_similar['SBA_Ratio'].map(lambda x: f"{x*100:.1f}%")
+            display_similar['返済期間'] = display_similar['TermInMonths'].map(lambda x: f"{x}ヶ月")
+            merged_display = pd.concat([current_row, display_similar[["状況", "融資額", "保証率", "返済期間", "LoanStatus"]]], ignore_index=True)
+
+            def style_row(row):
+                if row['LoanStatus'] == -1: return ['background-color: #e1f5fe; font-weight: bold'] * len(row)
+                elif row['LoanStatus'] == 1: return ['background-color: #ffebee; color: #c62828'] * len(row)
+                return [''] * len(row)
+            st.dataframe(merged_display.style.apply(style_row, axis=1), column_order=("状況", "融資額", "保証率", "返済期間"), use_container_width=True)
 
         else:
             st.header("🔬 数理モデルを用いた解析")
