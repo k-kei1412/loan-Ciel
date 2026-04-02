@@ -179,6 +179,7 @@ if st.session_state.clicked:
         sba_bonus_flag = current_sba_ratio >= 0.8
         dynamic_ceil = 120
 
+        # --- 入力データの作成 (型定義の厳格化) ---
         input_data_raw = {
             "GrossApproval": float(gross), 
             "SBAGuaranteedApproval": float(sba),
@@ -186,38 +187,50 @@ if st.session_state.clicked:
             "TermInMonths": float(term),
             "NaicsSector": str(sector_en), 
             "ApprovalFiscalYear": 2024.0, 
-            "Subprogram": 1.0,
-            "FixedOrVariableInterestInd": rate_type_val, 
+            "Subprogram": "Guaranty", # ここは学習時が文字列なら文字列で固定
+            "FixedOrVariableInterestInd": str(rate_type_val), 
             "CongressionalDistrict": 10.0, 
-            "BusinessType": b_type_val, 
-            "BusinessAge": b_age_val, 
+            "BusinessType": str(b_type_val), 
+            "BusinessAge": str(b_age_val), 
             "RevolverStatus": 0.0, 
             "JobsSupported": float(jobs), 
             "CollateralInd": str(collateral_val)
         }
+        
         input_df = pd.DataFrame([input_data_raw])
+
+        # 特徴量の並び順と欠損補完
         for col in expected_features:
             if col not in input_df.columns:
                 input_df[col] = 0.0
+        
         input_df = input_df[expected_features]
-            
-        cat_idx = [i for i, col in enumerate(input_df.columns) if input_df[col].dtype == 'object']
-        preds = model.predict_proba(Pool(input_df, cat_features=cat_idx))
+
+        # 【超重要】CatBoostに「どの列が文字（カテゴリ）か」を明示的に教える
+        cat_features_indices = []
+        for i, col in enumerate(expected_features):
+            # 文字列として扱うべき列を指定
+            if col in ["NaicsSector", "FixedOrVariableInterestInd", "BusinessType", "BusinessAge", "CollateralInd", "Subprogram"]:
+                input_df[col] = input_df[col].astype(str)
+                cat_features_indices.append(i)
+            else:
+                # 数値列は確実にfloatへ（ここで"Guaranty"などが混じっても排除される）
+                input_df[col] = pd.to_numeric(input_df[col], errors='coerce').fillna(0.0).astype(float)
+
+        # A. CatBoost予測実行
+        preds = model.predict_proba(Pool(input_df, cat_features=cat_features_indices))
         raw_proba = preds[0][1] if len(preds) > 0 else 0.5
 
-        # --- B. 類似事例検索 ---
-        search_pool = train_df[train_df['NaicsSector'] == sector_en].copy()
-        if len(search_pool) < 100: search_pool = train_df.copy()
         # --- B. 類似事例検索 (エラー回避・数値強制変換版) ---
         search_features = ["GrossApproval", "InitialInterestRate", "TermInMonths", "SBA_Ratio"]
         
-        # 1. 訓練データの数値化（文字が混じっていても強制的に数字にする）
+        # 訓練データの数値化
         train_num = search_pool[search_features].copy()
         for col in search_features:
             train_num[col] = pd.to_numeric(train_num[col], errors='coerce')
         train_num = train_num.fillna(0)
 
-        # 2. 入力データの型をfloatに固定
+        # 入力データの型をfloatに固定
         input_num = pd.DataFrame([{
             "GrossApproval": float(gross),
             "InitialInterestRate": float(rate),
@@ -225,7 +238,7 @@ if st.session_state.clicked:
             "SBA_Ratio": float(current_sba_ratio)
         }])
 
-        # 3. 正規化と重み付け計算
+        # 正規化と重み付け計算
         scaler = StandardScaler()
         weights = np.array([1.2, 1.0, 1.0, 2.0]) 
         train_scaled = scaler.fit_transform(train_num) * weights
