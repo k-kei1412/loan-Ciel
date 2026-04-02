@@ -448,28 +448,24 @@ if st.session_state.clicked:
             st.session_state.last_analyzed_data = st.session_state.current_analysis
             initial_prompt = f"入力パラメータが更新されました。最新の解析結果（{st.session_state.current_analysis}）に基づき、数理的な再評価を述べてください。"
             
-            try:
-                chat = client.chats.create(model='models/gemini-flash-latest', config={'system_instruction': SYSTEM_INSTRUCTION})
-                response = chat.send_message(initial_prompt)
-                with st.chat_message("model"): 
-                    st.markdown(response.text)
-                st.session_state.messages.append({"role": "model", "parts": [{"text": response.text}]})
-            except Exception as e:
-                st.warning(f"シエルの再考に失敗しました: {e}")
-
-        if prompt := st.chat_input("この解析結果について質問する..."):
-            st.session_state.messages.append({"role": "user", "parts": [{"text": prompt}]})
-            with st.chat_message("user"): 
-                st.markdown(prompt)
-            try:
-                chat = client.chats.create(model='models/gemini-flash-latest', config={'system_instruction': SYSTEM_INSTRUCTION}, history=st.session_state.messages[:-1])
-                response = chat.send_message(prompt + f"\nContext: {st.session_state.current_analysis}")
-                with st.chat_message("model"): 
-                    st.markdown(response.text)
-                st.session_state.messages.append({"role": "model", "parts": [{"text": response.text}]})
-            except Exception as e:
-                st.error(f"シエル接続エラー: {e}")
-    else:
-        st.write("解析結果について、シエルの意見が聞きたい場合はONにしてください。")
-else:
-    st.write("審査を開始すると、ここにシエルが出現します。")
+            # --- リトライ機能付き呼び出し ---
+            import time
+            success = False
+            for attempt in range(3): # 最大3回挑戦する
+                try:
+                    chat = client.chats.create(model='models/gemini-flash-latest', config={'system_instruction': SYSTEM_INSTRUCTION})
+                    response = chat.send_message(initial_prompt)
+                    with st.chat_message("model"): 
+                        st.markdown(response.text)
+                    st.session_state.messages.append({"role": "model", "parts": [{"text": response.text}]})
+                    success = True
+                    break
+                except Exception as e:
+                    if "503" in str(e):
+                        st.warning(f"シエルが混み合っています。再試行中... ({attempt+1}/3)")
+                        time.sleep(2) # 2秒待って再試行
+                    else:
+                        st.error(f"シエル接続エラー: {e}")
+                        break
+            if not success:
+                st.error("現在シエルとの通信が不安定です。少し待ってから再度「精密クロス審査」を押してください。")
