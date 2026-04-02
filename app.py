@@ -208,14 +208,26 @@ if st.session_state.clicked:
         # --- B. 類似事例検索 ---
         search_pool = train_df[train_df['NaicsSector'] == sector_en].copy()
         if len(search_pool) < 100: search_pool = train_df.copy()
+        # --- B. 類似事例検索 (エラー回避・数値強制変換版) ---
         search_features = ["GrossApproval", "InitialInterestRate", "TermInMonths", "SBA_Ratio"]
-        train_num = search_pool[search_features].fillna(0)
-        input_num = input_df[["GrossApproval", "InitialInterestRate", "TermInMonths"]].copy()
-        input_num["SBA_Ratio"] = current_sba_ratio
+        
+        # 1. 訓練データの数値化（文字が混じっていても強制的に数字にする）
+        train_num = search_pool[search_features].copy()
+        for col in search_features:
+            train_num[col] = pd.to_numeric(train_num[col], errors='coerce')
+        train_num = train_num.fillna(0)
+
+        # 2. 入力データの型をfloatに固定
+        input_num = pd.DataFrame([{
+            "GrossApproval": float(gross),
+            "InitialInterestRate": float(rate),
+            "TermInMonths": float(term),
+            "SBA_Ratio": float(current_sba_ratio)
+        }])
+
+        # 3. 正規化と重み付け計算
         scaler = StandardScaler()
         weights = np.array([1.2, 1.0, 1.0, 2.0]) 
-        train_scaled = scaler.fit_transform(train_num) * weights
-        input_scaled = scaler.transform(input_num) * weights 
         train_scaled = scaler.fit_transform(train_num) * weights
         input_scaled = scaler.transform(input_num) * weights
         nn = NearestNeighbors(n_neighbors=min(100, len(search_pool)))
