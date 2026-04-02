@@ -221,16 +221,23 @@ if st.session_state.clicked:
         preds = model.predict_proba(Pool(input_df, cat_features=cat_features_indices))
         raw_proba = preds[0][1] if len(preds) > 0 else 0.5
 
-        # --- B. 類似事例検索 (エラー回避・数値強制変換版) ---
+        # --- B. 類似事例検索 (定義順序の修正版) ---
+        # 1. まず検索対象のデータ (search_pool) を作成する
+        search_pool = train_df[train_df['NaicsSector'] == sector_en].copy()
+        
+        # 該当セクターが少なすぎる場合は全データを対象にする
+        if len(search_pool) < 100: 
+            search_pool = train_df.copy()
+
         search_features = ["GrossApproval", "InitialInterestRate", "TermInMonths", "SBA_Ratio"]
         
-        # 訓練データの数値化
+        # 2. 訓練データの数値化（文字が混じっていても強制的に数字にする）
         train_num = search_pool[search_features].copy()
         for col in search_features:
             train_num[col] = pd.to_numeric(train_num[col], errors='coerce')
         train_num = train_num.fillna(0)
 
-        # 入力データの型をfloatに固定
+        # 3. 入力データの型をfloatに固定
         input_num = pd.DataFrame([{
             "GrossApproval": float(gross),
             "InitialInterestRate": float(rate),
@@ -238,14 +245,17 @@ if st.session_state.clicked:
             "SBA_Ratio": float(current_sba_ratio)
         }])
 
-        # 正規化と重み付け計算
+        # 4. 正規化と重み付け計算
         scaler = StandardScaler()
         weights = np.array([1.2, 1.0, 1.0, 2.0]) 
         train_scaled = scaler.fit_transform(train_num) * weights
         input_scaled = scaler.transform(input_num) * weights
+
+        # 5. 最近傍探索の実行
         nn = NearestNeighbors(n_neighbors=min(100, len(search_pool)))
         nn.fit(train_scaled)
         _, indices = nn.kneighbors(input_scaled)
+        
         similar_cases = search_pool.iloc[indices[0]].copy()
         risk_pct = similar_cases['LoanStatus'].mean() * 100
         def_count = int(similar_cases['LoanStatus'].sum())
