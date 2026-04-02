@@ -186,7 +186,7 @@ if st.session_state.clicked:
             "TermInMonths": float(term),
             "NaicsSector": str(sector_en), 
             "ApprovalFiscalYear": 2024.0, 
-            "Subprogram": "Guaranty", 
+            "Subprogram": 1.0,
             "FixedOrVariableInterestInd": rate_type_val, 
             "CongressionalDistrict": 10.0, 
             "BusinessType": b_type_val, 
