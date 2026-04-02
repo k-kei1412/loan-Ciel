@@ -215,6 +215,8 @@ if st.session_state.clicked:
         scaler = StandardScaler()
         weights = np.array([1.2, 1.0, 1.0, 2.0]) 
         train_scaled = scaler.fit_transform(train_num) * weights
+        input_scaled = scaler.transform(input_num) * weights 
+        train_scaled = scaler.fit_transform(train_num) * weights
         input_scaled = scaler.transform(input_num) * weights
         nn = NearestNeighbors(n_neighbors=min(100, len(search_pool)))
         nn.fit(train_scaled)
